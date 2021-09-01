@@ -41,8 +41,6 @@ app.get("/api/timestamp", function(req, res){
     });
 });
 
-
-
 app.get("/api/timestamp/:date_string", function(req, res){
   let dateString = req.params.date_string;
 
@@ -66,6 +64,18 @@ app.get("/api/timestamp/:date_string", function(req, res){
   }
   
 });
+
+app.get("/api/whoami", function(req, res){
+  res.json({
+    // "value" : Object.keys(req),
+    "ipaddress" : req.ip,
+    "language" : req.headers["accept-language"],
+    "software" : req.headers["user-agent"],
+  });
+});
+
+
+
 
 
 // listen for requests :)
