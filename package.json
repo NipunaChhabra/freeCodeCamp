@@ -7,15 +7,22 @@
 	},
 	"main": "server.js",
 	"scripts": {
-		"start": "node server.js"
+		"start": "node server.js",
+		"dev": "nodemon server.js"
 	},
 	"dependencies": {
+		"body-parser": "^1.19.0",
+		"cors": "^2.8.0",
+		"dotenv": "^8.2.0",
 		"ejs": "^3.1.5",
 		"express": "^4.15.2",
-		"cors": "^2.8.0"
+		"mongodb": "^4.1.1",
+		"mongoose": "^6.0.3",
+		"shortid": "^2.2.16"
 	},
 	"devDependencies": {
 		"got": "^11.3.0",
+		"nodemon": "^2.0.4",
 		"tape": "^4.7.0"
 	},
 	"repository": {
