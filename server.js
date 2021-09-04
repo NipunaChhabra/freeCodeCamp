@@ -110,10 +110,10 @@ app.post("/api/shorturl", function(req, res){
     if(err) return console.error(err);
     console.log("Document uploaded");
     res.json({
-      "saved" : true,
-      "short_url" : newURL.short_url,
+      // "saved" : true,
+      // "short_url" : newURL.short_url,
       "original_url": newURL.original_url,
-      "suffix": newURL.suffix
+      "short_url": newURL.suffix
     });
   });
 });
@@ -126,9 +126,6 @@ app.get("/api/shorturl/:suffix", function(req, res){
       res.redirect(urlForRedirect.original_url);
   });
 });
-
-
-
 
 
 // listen for requests :)
