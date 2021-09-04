@@ -7,8 +7,10 @@ var express = require('express');
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
 // var bodyParser = require('body-parser');
+const dns = require('dns');
 var shortid = require('shortid');
 var app = express();
+const urlParser = require('url');
 var port = process.env.PORT || 3000;
 
 var database_uri = "mongodb+srv://nipuna:nipuna@cluster0.0dte1.mongodb.net/Cluster0?retryWrites=true&w=majority";
@@ -97,25 +99,33 @@ var urlModel = mongoose.model('urlModel', new mongoose.Schema({
 app.use(express.urlencoded({ extended: false}))
 app.use(express.json())
 
-app.post("/api/shorturl", function(req, res){
+app.post("/api/shorturl", (req, res) => {
   let client_requested_url = req.body.url
   let suffix = shortid.generate();
 
-  let newURL = new urlModel({
-    short_url: __dirname + "/api/shorturl/" + suffix,
-    original_url: client_requested_url,
-    suffix: suffix
-  })
-  newURL.save(function(err, doc) {
-    if(err) return console.error(err);
-    console.log("Document uploaded");
-    res.json({
-      // "saved" : true,
-      // "short_url" : newURL.short_url,
-      "original_url": newURL.original_url,
-      "short_url": newURL.suffix
-    });
+  const something = dns.lookup(urlParser.parse(client_requested_url).hostname, (err, address)=>{
+    if(!address){
+      res.json({error: "Invalid URL"})
+    }else{
+      let newURL = new urlModel({
+        short_url: __dirname + "/api/shorturl/" + suffix,
+        original_url: client_requested_url,
+        suffix: suffix
+      })
+      newURL.save(function(err, doc) {
+        if(err) return console.error(err);
+        console.log("Document uploaded");
+        res.json({
+          // "saved" : true,
+          // "short_url" : newURL.short_url,
+          "original_url": newURL.original_url,
+          "short_url": newURL.suffix
+        });
+      });
+    }
   });
+
+
 });
 
 app.get("/api/shorturl/:suffix", (req, res) => {
