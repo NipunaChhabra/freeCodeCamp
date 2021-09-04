@@ -11,9 +11,9 @@ var shortid = require('shortid');
 var app = express();
 var port = process.env.PORT || 3000;
 
-// var database_uri = "mongodb+srv://nipuna:nipuna@cluster0.0dte1.mongodb.net/Cluster0?retryWrites=true&w=majority";
-mongoose.connect(process.env.DB_URI);
-// mongoose.connect(database_uri);
+var database_uri = "mongodb+srv://nipuna:nipuna@cluster0.0dte1.mongodb.net/Cluster0?retryWrites=true&w=majority";
+// mongoose.connect(process.env.DB_URI);
+mongoose.connect(database_uri);
 
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 // so that your API is remotely testable by FCC 
