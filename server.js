@@ -21,6 +21,7 @@ mongoose.connect(database_uri);
 // enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
 // so that your API is remotely testable by FCC 
 var cors = require('cors');
+const { response } = require('express');
 app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
 
 // http://expressjs.com/en/starter/static-files.html
@@ -156,14 +157,18 @@ app.post("/api/users", (req, res) =>{
     })
 });
 
-const exerciseSchema = new mongoose.Schema({userid:String, description:String, duration:Number, date:String});
+app.get('/api/users', (req, res) =>{
+  User.find({}, (error, arrayOfUsers)=>{
+    if(!error){
+      res.json(arrayOfUsers)
+    }
+  })
+})
+
+const exerciseSchema = new mongoose.Schema({userid:String, description:String, duration:Number,  date: { type: String, default: new Date().toString() }});
 const Exercise = mongoose.model("Exercise", exerciseSchema)
 app.post("/api/users/:_id/exercises", (req, res)=> {
-  const {descripton, duration} = req.body;
-  var date = new Date(req.body.date).toDateString();
-  if(!date){
-    date=new Date().toDateString();
-  }
+  const {descripton, duration, date} = req.body;
   const userId = req.params._id
   personModel.findById(userId, (err, data) => {
       if(!data){
