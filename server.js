@@ -144,7 +144,7 @@ app.get("/api/shorturl/:suffix", (req, res) => {
 });
 
 //Exercise Tracker
-const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: dateString, default: new Date().toString()}});
+const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: String, default: new Date().toString()}});
 const Exercise = mongoose.model("Exercise", exerciseSchema)
 
 const userSchema = new mongoose.Schema({username: {type:String, unique: true}, log: [exerciseSchema]});
