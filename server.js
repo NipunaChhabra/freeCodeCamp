@@ -273,7 +273,7 @@ app.get('/api/users/:id/logs', (request, response) => {
 
 app.post('/api/fileanalyse', multer().single('upfile'),(request, response) => {
   let responseObject = {}
-  responseObject['name'] = request.file.originalname
+  responseObject['name'] = 'upfile'
   responseObject['type'] = request.file.mimetype
   responseObject['size'] = request.file.size
 
