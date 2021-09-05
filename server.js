@@ -3,9 +3,10 @@
 
 // init project
 require('dotenv').config();
-var express = require('express');
-var mongo = require('mongodb');
-var mongoose = require('mongoose');
+let express = require('express');
+let mongo = require('mongodb');
+let mongoose = require('mongoose');
+let multer = require('multer');
 // var bodyParser = require('body-parser');
 const dns = require('dns');
 var shortid = require('shortid');
@@ -66,6 +67,10 @@ app.get("/urlShortener", function (req, res) {
 
 app.get("/exerciseTracker", function (req, res) {
   res.sendFile(__dirname + '/views/exercise.html');
+});
+
+app.get("/fileMeta", function (req, res) {
+  res.sendFile(__dirname + '/views/fileMeta.html');
 });
 
 // your first API endpoint... 
@@ -224,7 +229,7 @@ app.post('/api/users/:_id/exercises', (request, response) => {
   })
 })
 
-app.get('/api/users/:_id/logs', (request, response) => {
+app.get('/api/users/:id/logs', (request, response) => {
   
   User.findById(request.params.userId, (error, result) => {
     if(!error){
@@ -266,7 +271,14 @@ app.get('/api/users/:_id/logs', (request, response) => {
   
 })
 
+app.post('/api/fileanalyse', multer().single('upfile'),(request, response) => {
+  let responseObject = {}
+  responseObject['name'] = request.file.originalname
+  responseObject['type'] = request.file.mimetype
+  responseObject['size'] = request.file.size
 
+  response.json(responseObject)
+})
 
 // listen for requests :)
 var listener = app.listen(port, function () {
