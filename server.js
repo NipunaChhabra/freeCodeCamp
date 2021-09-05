@@ -163,7 +163,7 @@ app.get("/api/shorturl/:suffix", (req, res) => {
 });
 
 //Exercise Tracker
-const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: Date, default: Date.now}});
+const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: String, default: Date.toString()}});
 const Exercise = mongoose.model("Exercise", exerciseSchema)
 
 const userSchema = new mongoose.Schema({username: {type:String, unique: true}, log: [exerciseSchema]});
@@ -196,53 +196,35 @@ app.get('/api/users', (req,res) => {
   })
 })
 
-
-app.post("/api/users/:_id/exercises", (req, res, next) => {
-  let { userId, description, duration, date } = req.body;
-  User.findOne({ _id: userId }).then(user => {
-      if (!user) throw new Error('Unknown user with _id');
-      date = date || Date.now();
-      return Exercise.create({
-          description, duration, date, userId
-      })
-          .then(ex => res.status(200).send({
-              username: user.username,
-              description, duration,
-              _id: user._id,
-              date: moment(ex.date).format('ddd MMMM DD YYYY')
-          }))
+app.post('/api/users/:_id/exercises', (request, response) => {
+  let newExerciseItem = new Exercise({
+    description: request.body.description,
+    duration: parseInt(request.body.duration),
+    date: request.body.date
   })
-      .catch(err => {
-          console.log(err);
-          res.status(500).send(err.message);
-      })
+  
+  if(newExerciseItem.date === ''){
+    newExerciseItem.date = new Date().toISOString().substring(0,10)
+  }
+  
+  User.findByIdAndUpdate(
+    request.params._id,
+    {$push: {log: newExerciseItem}},
+    {new: true},
+    (error, updatedUser) => {
+    if(!error){
+      let responseObject = {}
+      responseObject['_id'] = updatedUser._id
+      responseObject['username'] = updatedUser.username
+      responseObject['description'] = newExerciseItem.description
+      responseObject['duration'] = newExerciseItem.duration
+      responseObject['date'] = new Date(newExerciseItem.date).toDateString()
+      response.json(responseObject)
+    }
+  })
 })
 
-app.get("/api/users/:_id/logs", (req, res, next)=>{
-  let { userId, from, to, limit } = req.query;
-  from = moment(from, 'YYYY-MM-DD').isValid() ? moment(from, 'YYYY-MM-DD') : 0;
-  to = moment(to, 'YYYY-MM-DD').isValid() ? moment(to, 'YYYY-MM-DD') : moment().add(1000000000000);
-  User.findById(userId).then(user => {
-      if (!user) throw new Error('Unknown user with _id');
-      Exercise.find({ userId })
-          .where('date').gte(from).lte(to)
-          .limit(+limit).exec()
-          .then(log => res.status(200).send({
-              _id: userId,
-              username: user.username,
-              count: log.length,
-              log: log.map(o => ({
-                  description: o.description,
-                  duration: o.duration,
-                  date: moment(o).format('ddd MMMM DD YYYY')
-              }))
-          }))
-  })
-      .catch(err => {
-          console.log(err);
-          res.status(500).send(err.message);
-      })
-})
+
 
 
 // listen for requests :)
