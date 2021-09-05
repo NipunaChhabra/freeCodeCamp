@@ -143,11 +143,16 @@ app.get("/api/shorturl/:suffix", (req, res) => {
   });
 });
 
-const personSchema = new mongoose.Schema({username: {type:String, unique: true} });
-const personModel = mongoose.model('Person', personSchema);
 //Exercise Tracker
+const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: String, default: new Date().toString()}});
+const Exercise = mongoose.model("Exercise", exerciseSchema)
+
+const userSchema = new mongoose.Schema({username: {type:String, unique: true}, log: [exerciseSchema]});
+const User = mongoose.model('Person', userSchema);
+
+
 app.post("/api/users", (req, res) =>{
-    const newPerson = new personModel({username: req.body.username});
+    const newPerson = new User({username: req.body.username});
     newPerson.save((err, data)=>{
       if(err){
         res.json("username taken");
@@ -157,8 +162,8 @@ app.post("/api/users", (req, res) =>{
     })
 });
 
-app.get('/api/users', (req,res) =>{
-  personModel.find({}, (error, arrayOfUsers)=>{
+app.get('/api/users', (req,res) => {
+  User.find({}, (error, arrayOfUsers) => {
     if(!error){
       res.json(arrayOfUsers)
     }else{
@@ -167,25 +172,38 @@ app.get('/api/users', (req,res) =>{
   })
 })
 
-const exerciseSchema = new mongoose.Schema({userid:String, description:String, duration:Number,  date: { type: String, default: new Date().toString() }});
-const Exercise = mongoose.model("Exercise", exerciseSchema)
-app.post("/api/users/:_id/exercises", (req, res)=> {
-  const {descripton, duration, date} = req.body;
-  const userId = req.params._id
-  personModel.findById(userId, (err, data) => {
-      if(!data){
-        res.send("Unknown UserId");
-      }else{
-        const username = data.username;
-        const newExercise = new Exercise({userId, descripton, duration, date});
-        newExercise.save((err, data)=>{
-          res.json({userId, username, descripton, duration, date});
-        })
-      }
+
+app.post("/api/users/:_id/exercises", (request, response)=> {
+  let newExerciseItem = new Exercise({
+    description: request.body.description,
+    duration: parseInt(request.body.duration),
+    date: request.body.date
+  })
+  const userId = request.params._id
+  User.findByIdAndUpdate(userId,
+    {$push: {log: newExerciseItem}},
+    {new: true},
+    (error, updatedUser) => {
+    if(!error){
+      let responseObject = {}
+      responseObject['_id'] = updatedUser.id
+      responseObject['username'] = updatedUser.username
+      responseObject['description'] = newExerciseItem.description
+      responseObject['duration'] = newExerciseItem.duration
+      responseObject['date'] = new Date(newExerciseItem.date).toDateString()
+      response.json(responseObject)
+    }
   })
 })
 
-app.get("/api/users/:_id/logs", )
+app.get("/api/users/:_id/logs", (request, response)=>{
+  User.findById(request.query.userId, (error, result) => {
+    if(!error){
+			result['count'] = result.log.length
+      response.json(result)
+    }
+  })
+})
 
 
 // listen for requests :)
