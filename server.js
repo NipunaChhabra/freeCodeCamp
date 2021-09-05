@@ -27,9 +27,6 @@ app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 20
 // http://expressjs.com/en/starter/static-files.html
 // app.use(express.static('public'));
 app.use('/public', express.static(`${process.cwd()}/public`));
-app.use((req, res, next) => {
-  return next({status: 404, message: 'not found'})
-})
 
 // Error Handling middleware
 app.use((err, req, res, next) => {
@@ -166,7 +163,7 @@ app.get("/api/shorturl/:suffix", (req, res) => {
 });
 
 //Exercise Tracker
-const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: String, default: new Date().toString().substring(0,10)}});
+const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: Date, default: Date.now}});
 const Exercise = mongoose.model("Exercise", exerciseSchema)
 
 const userSchema = new mongoose.Schema({username: {type:String, unique: true}, log: [exerciseSchema]});
