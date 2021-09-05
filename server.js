@@ -179,6 +179,9 @@ app.post("/api/users/:_id/exercises", (request, response)=> {
     duration: parseInt(request.body.duration),
     date: request.body.date
   })
+  if(newExerciseItem.date === ''){
+    newExerciseItem.date = new Date().toISOString().substring(0,10)
+  }
   const userId = request.params._id
   User.findByIdAndUpdate(userId,
     {$push: {log: newExerciseItem}},
@@ -224,7 +227,6 @@ app.get("/api/users/:_id/logs", (request, response)=>{
           return sessionDate >= fromDate && sessionDate <= toDate
           
         })
-        
       }
       
       if(request.params.limit){
