@@ -197,21 +197,22 @@ app.post("/api/users/:_id/exercises", (request, response)=> {
 })
 
 app.get("/api/users/:_id/logs", (request, response)=>{
-  User.findById(request.query.userId, (error, result) => {
+  const userId = request.params._id
+  User.findById(userId, (error, result) => {
     if(!error){
       let responseObject = result
       
-      if(request.query.from || request.query.to){
+      if(request.params.from || request.params.to){
         
         let fromDate = new Date(0)
         let toDate = new Date()
         
-        if(request.query.from){
-          fromDate = new Date(request.query.from)
+        if(request.params.from){
+          fromDate = new Date(request.params.from)
         }
         
-        if(request.query.to){
-          toDate = new Date(request.query.to)
+        if(request.params.to){
+          toDate = new Date(request.params.to)
         }
         
         fromDate = fromDate.getTime()
@@ -226,8 +227,8 @@ app.get("/api/users/:_id/logs", (request, response)=>{
         
       }
       
-      if(request.query.limit){
-        responseObject.log = responseObject.log.slice(0, request.query.limit)
+      if(request.params.limit){
+        responseObject.log = responseObject.log.slice(0, request.params.limit)
       }
       
       responseObject = responseObject.toJSON()
