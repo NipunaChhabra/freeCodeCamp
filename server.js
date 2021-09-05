@@ -230,17 +230,17 @@ app.get('/api/users/:_id/logs', (request, response) => {
     if(!error){
       let responseObject = result
       
-      if(request.query.from || request.query.to){
+      if(request.params.from || request.params.to){
         
         let fromDate = new Date(0)
         let toDate = new Date()
         
-        if(request.query.from){
-          fromDate = new Date(request.query.from)
+        if(request.params.from){
+          fromDate = new Date(request.params.from)
         }
         
-        if(request.query.to){
-          toDate = new Date(request.query.to)
+        if(request.params.to){
+          toDate = new Date(request.params.to)
         }
         
         fromDate = fromDate.getTime()
@@ -252,7 +252,6 @@ app.get('/api/users/:_id/logs', (request, response) => {
           return sessionDate >= fromDate && sessionDate <= toDate
           
         })
-        
       }
       
       if(request.query.limit){
