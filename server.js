@@ -9,6 +9,7 @@ var mongoose = require('mongoose');
 // var bodyParser = require('body-parser');
 const dns = require('dns');
 var shortid = require('shortid');
+
 var app = express();
 const urlParser = require('url');
 var port = process.env.PORT || 3000;
@@ -41,6 +42,10 @@ app.get("/requestHeaderParser", function (req, res) {
 
 app.get("/urlShortener", function (req, res) {
   res.sendFile(__dirname + '/views/urlShortener.html');
+});
+
+app.get("/exerciseTracker", function (req, res) {
+  res.sendFile(__dirname + '/views/exercise.html');
 });
 
 // your first API endpoint... 
@@ -136,6 +141,44 @@ app.get("/api/shorturl/:suffix", (req, res) => {
       res.redirect(urlForRedirect.original_url);
   });
 });
+
+const personSchema = new mongoose.Schema({username: {type:String, unique: true} });
+const personModel = mongoose.model('Person', personSchema);
+//Exercise Tracker
+app.post("/api/users", (req, res) =>{
+    const newPerson = new personModel({username: req.body.username});
+    newPerson.save((err, data)=>{
+      if(err){
+        res.json("username taken");
+      }else{
+      res.json({"username": data.username, "_id": data.id})
+      }
+    })
+});
+
+const exerciseSchema = new mongoose.Schema({userid:String, description:String, duration:Number, date:String});
+const Exercise = mongoose.model("Exercise", exerciseSchema)
+app.post("/api/users/:_id/exercises", (req, res)=> {
+  const {descripton, duration} = req.body;
+  var date = new Date(req.body.date).toDateString();
+  if(!date){
+    date=new Date().toDateString();
+  }
+  const userId = req.params._id
+  personModel.findById(userId, (err, data) => {
+      if(!data){
+        res.send("Unknown UserId");
+      }else{
+        const username = data.username;
+        const newExercise = new Exercise({userId, descripton, duration, date});
+        newExercise.save((err, data)=>{
+          res.json({userId, username, descripton, duration, date});
+        })
+      }
+  })
+})
+
+app.get("/api/users/:_id/logs", )
 
 
 // listen for requests :)
