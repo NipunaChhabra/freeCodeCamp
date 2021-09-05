@@ -27,6 +27,28 @@ app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 20
 // http://expressjs.com/en/starter/static-files.html
 // app.use(express.static('public'));
 app.use('/public', express.static(`${process.cwd()}/public`));
+app.use((req, res, next) => {
+  return next({status: 404, message: 'not found'})
+})
+
+// Error Handling middleware
+app.use((err, req, res, next) => {
+  let errCode, errMessage
+
+  if (err.errors) {
+    // mongoose validation error
+    errCode = 400 // bad request
+    const keys = Object.keys(err.errors)
+    // report the first validation error
+    errMessage = err.errors[keys[0]].message
+  } else {
+    // generic or custom error
+    errCode = err.status || 500
+    errMessage = err.message || 'Internal Server Error'
+  }
+  res.status(errCode).type('txt')
+    .send(errMessage)
+})
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (req, res) {
@@ -151,15 +173,20 @@ const userSchema = new mongoose.Schema({username: {type:String, unique: true}, l
 const User = mongoose.model('Person', userSchema);
 
 
-app.post("/api/users", (req, res) =>{
-    const newPerson = new User({username: req.body.username});
-    newPerson.save((err, data)=>{
-      if(err){
-        res.json("username taken");
-      }else{
-      res.json({"username": data.username, "_id": data.id})
-      }
-    })
+app.post("/api/users", (req, res, next) =>{
+  const { username } = req.body;
+  User.findOne({ username }).then(user => {
+      if (user) throw new Error('username already taken');
+      return User.create({ username })
+  })
+      .then(user => res.status(200).send({
+          username: user.username,
+          _id: user._id
+      }))
+      .catch(err => {
+          console.log(err);
+          res.status(500).send(err.message);
+      })
 });
 
 app.get('/api/users', (req,res) => {
@@ -173,71 +200,51 @@ app.get('/api/users', (req,res) => {
 })
 
 
-app.post("/api/users/:_id/exercises", (request, response)=> {
-  let newExerciseItem = new Exercise({
-    description: request.body.description,
-    duration: parseInt(request.body.duration),
-    date: request.body.date
+app.post("/api/users/:_id/exercises", (req, res, next) => {
+  let { userId, description, duration, date } = req.body;
+  User.findOne({ _id: userId }).then(user => {
+      if (!user) throw new Error('Unknown user with _id');
+      date = date || Date.now();
+      return Exercise.create({
+          description, duration, date, userId
+      })
+          .then(ex => res.status(200).send({
+              username: user.username,
+              description, duration,
+              _id: user._id,
+              date: moment(ex.date).format('ddd MMMM DD YYYY')
+          }))
   })
-  if(newExerciseItem.date === ''){
-    newExerciseItem.date = new Date().toISOString().substring(0,10)
-  }
-  const userId = request.params._id
-  User.findByIdAndUpdate(userId,
-    {$push: {log: newExerciseItem}},
-    {new: true},
-    (error, updatedUser) => {
-    if(!error){
-      let responseObject = {}
-      responseObject['_id'] = updatedUser.id
-      responseObject['username'] = updatedUser.username
-      responseObject['description'] = newExerciseItem.description
-      responseObject['duration'] = newExerciseItem.duration
-      responseObject['date'] = new Date(newExerciseItem.date).toISOString().substring(0,10)
-      response.json(responseObject)
-    }
-  })
+      .catch(err => {
+          console.log(err);
+          res.status(500).send(err.message);
+      })
 })
 
-app.get("/api/users/:_id/logs", (request, response)=>{
-  User.findById(request.query.userId, (error, result) => {
-    if(!error){
-      let responseObject = result
-      
-      if(request.query.from || request.query.to){
-        
-        let fromDate = new Date(0)
-        let toDate = new Date()
-        
-        if(request.query.from){
-          fromDate = new Date(request.query.from)
-        }
-        
-        if(request.query.to){
-          toDate = new Date(request.query.to)
-        }
-        
-        fromDate = fromDate.getTime()
-        toDate = toDate.getTime()
-        
-        responseObject.log = responseObject.log.filter((session) => {
-          let sessionDate = new Date(session.date).getTime()
-          
-          return sessionDate >= fromDate && sessionDate <= toDate
-          
-        })
-        
-      }
-      
-      if(request.query.limit){
-        responseObject.log = responseObject.log.slice(0, request.query.limit)
-      }
-      
-      responseObject = responseObject.toJSON()
-      responseObject['count'] = result.log.length
-      response.json(responseObject)
-    }
+app.get("/api/users/:_id/logs", (req, res, next)=>{
+  let { userId, from, to, limit } = req.query;
+  from = moment(from, 'YYYY-MM-DD').isValid() ? moment(from, 'YYYY-MM-DD') : 0;
+  to = moment(to, 'YYYY-MM-DD').isValid() ? moment(to, 'YYYY-MM-DD') : moment().add(1000000000000);
+  User.findById(userId).then(user => {
+      if (!user) throw new Error('Unknown user with _id');
+      Exercise.find({ userId })
+          .where('date').gte(from).lte(to)
+          .limit(+limit).exec()
+          .then(log => res.status(200).send({
+              _id: userId,
+              username: user.username,
+              count: log.length,
+              log: log.map(o => ({
+                  description: o.description,
+                  duration: o.duration,
+                  date: moment(o).format('ddd MMMM DD YYYY')
+              }))
+          }))
   })
+      .catch(err => {
+          console.log(err);
+          res.status(500).send(err.message);
+      })
 })
 
 
