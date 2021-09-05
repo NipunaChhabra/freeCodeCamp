@@ -144,7 +144,7 @@ app.get("/api/shorturl/:suffix", (req, res) => {
 });
 
 //Exercise Tracker
-const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: String, default: new Date().toString()}});
+const exerciseSchema = new mongoose.Schema({description: {type:String, required:true}, duration: {type: Number, required: true},  date: { type: String, default: new Date().toString().substring(0,10)}});
 const Exercise = mongoose.model("Exercise", exerciseSchema)
 
 const userSchema = new mongoose.Schema({username: {type:String, unique: true}, log: [exerciseSchema]});
@@ -193,29 +193,28 @@ app.post("/api/users/:_id/exercises", (request, response)=> {
       responseObject['username'] = updatedUser.username
       responseObject['description'] = newExerciseItem.description
       responseObject['duration'] = newExerciseItem.duration
-      responseObject['date'] = new Date(newExerciseItem.date).toDateString()
+      responseObject['date'] = new Date(newExerciseItem.date).toISOString().substring(0,10)
       response.json(responseObject)
     }
   })
 })
 
 app.get("/api/users/:_id/logs", (request, response)=>{
-  const userId = request.params._id
-  User.findById(userId, (error, result) => {
+  User.findById(request.query.userId, (error, result) => {
     if(!error){
       let responseObject = result
       
-      if(request.params.from || request.params.to){
+      if(request.query.from || request.query.to){
         
         let fromDate = new Date(0)
         let toDate = new Date()
         
-        if(request.params.from){
-          fromDate = new Date(request.params.from)
+        if(request.query.from){
+          fromDate = new Date(request.query.from)
         }
         
-        if(request.params.to){
-          toDate = new Date(request.params.to)
+        if(request.query.to){
+          toDate = new Date(request.query.to)
         }
         
         fromDate = fromDate.getTime()
@@ -227,10 +226,11 @@ app.get("/api/users/:_id/logs", (request, response)=>{
           return sessionDate >= fromDate && sessionDate <= toDate
           
         })
+        
       }
       
-      if(request.params.limit){
-        responseObject.log = responseObject.log.slice(0, request.params.limit)
+      if(request.query.limit){
+        responseObject.log = responseObject.log.slice(0, request.query.limit)
       }
       
       responseObject = responseObject.toJSON()
