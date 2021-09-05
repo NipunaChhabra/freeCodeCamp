@@ -157,10 +157,12 @@ app.post("/api/users", (req, res) =>{
     })
 });
 
-app.get('/api/users', (req, res) =>{
-  User.find({}, (error, arrayOfUsers)=>{
+app.get('/api/users', (req,res) =>{
+  personModel.find({}, (error, arrayOfUsers)=>{
     if(!error){
       res.json(arrayOfUsers)
+    }else{
+      res.json({"error": error})
     }
   })
 })
