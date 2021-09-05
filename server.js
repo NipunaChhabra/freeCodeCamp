@@ -224,7 +224,7 @@ app.post('/api/users/:_id/exercises', (request, response) => {
   })
 })
 
-app.get('/api/users/:_id/log', (request, response) => {
+app.get('/api/users/:_id/logs', (request, response) => {
   
   User.findById(request.params.userId, (error, result) => {
     if(!error){
